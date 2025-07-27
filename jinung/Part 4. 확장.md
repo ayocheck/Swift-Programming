@@ -130,3 +130,44 @@
     | 확장 | 수직 확장  | 수평 확장 |
     | 사용 | 클래스 타입에서만 사용 | 클래스, 구조체, 프로토콜, 제네릭 등 모든 타입에서 사용 |
     | 재정의 | 재정의 가능 | 재정의 불가 |
+
+### Chapter 22. 제네릭
+
+- 제네릭의 장점
+    - 어떤 타입에도 유연하게 대응할 수 있다.
+    - 재사용하기 쉽고, 코드의 중복을 줄일 수 있다.
+- 타입 제약
+    - 클래스 타입 또는 프로토콜로만 제약을 줄 수 있다.
+- 프로토콜의 연관 타입
+    - 타입 매개변수의 역할을 프로토콜에서 수행할 수 있도록 만들어진 기능
+    - 어떤 타입을 사용할 지 명확하게 하고 싶다면, `typealias`를 이용하여 타입 별칭을 지정할 수도 있다.
+    - 코드 예시
+        
+        ```swift
+        protocol Container {
+            associatedtype ItemType
+            var count: Int { get }
+            mutating func append(_ newElement: ItemType)
+            subscript(i: Int) -> ItemType { get }
+        }
+        
+        class MyContainer: Container {
+            var items: Array<Int> = []
+            
+            var count: Int {
+                items.count
+            }
+            
+            func append(_ newElement: Int) {
+                items.append(newElement)
+            }
+            
+            subscript(i: Int) -> Int {
+                return items[i]
+            }
+        }
+        ```
+        
+- 매개변수 다발
+    - `repeat each`
+
