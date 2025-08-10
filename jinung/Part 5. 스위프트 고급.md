@@ -107,3 +107,181 @@
 - `where`절 용도
     - 패턴과 결합하여 조건 추가
     - 타입에 대한 제약 추가
+
+### Chapter 27. ARC
+
+- 스위프트는 메모리 관리를 위해 ARC를 사용
+    - Automatic Reference Counting 자동 참조 카운팅
+    - 개발자가 메모리 관리에 신경을 덜 수 있도록 하기 위함.
+- 자바의 가비지 컬렉션과의 차이
+    
+    
+    | 메모리 관리 기법 | ARC | 가비지 컬렉션 |
+    | --- | --- | --- |
+    | 참조 카운팅 시점 | 컴파일 시 | 프로그램 동작 중 |
+    | 장점 | - 컴파일 당시 이미 인스턴스의 해제 시점이 정해져 있어서 인스턴스가 언제 메모리에서 해제될지 예측할 수 있다.
+    - 컴파일 당시 이미 인스턴스의 해제 시점이 정해져 있어서 메모리 관리를 위한 시스템 자원을 추가할 필요가 없다. | - 상호 참조 상황 등의 복잡한 상황에서도 인스턴스를 해제할 수 있는 가능성이 더 높다.
+    - 특별히 규칙에 신경 쓸 필요가 없다. |
+    | 단점 | - ARC의 작동 규칙을 모르고 사용하면 인스턴스가 메모리에서 영원히 해제되지 않을 가능성이 있다. | - 프로그램 동작 외에 메모리 감시를 위한 추가 자원이 필요하므로 한정적인 자원 환경에서는 성능 저하가 발생할 수 있다.
+    - 명확한 규칙이 없기 때문에 인스턴스가 정확히 언제 메모리에서 해제될지 예측하기 어렵다. |
+- 강한참조
+    - 강한참조 순환
+        - 두 인스턴스가 서로를 참조하는 상황에서 강한참조 순환이 발생할 수 있다.
+        - 강한참조 순환은 메모리 누수로 이어진다.
+        - 코드 예시
+            
+            ```swift
+            import Foundation
+            
+            class Person {
+                var room: Room?
+                
+                let name: String
+                
+                init(name: String) {
+                    self.name = name
+                }
+                
+                deinit {
+                    print("\(name) is being deinitialized")
+                }
+            }
+            
+            class Room {
+                var host: Person?
+                
+                let number: String
+                
+                init(number: String) {
+                    self.number = number
+                }
+                
+                deinit {
+                    print("Room \(number) is being deinitialized")
+                }
+            }
+            
+            var yagom: Person? = Person(name: "yagom")      // Person 인스턴스의 참조 횟수 : 1
+            var room: Room? = Room(number: "505")      // Room 인스턴스의 참조 횟수 : 1
+            
+            room?.host = yagom // Person 인스턴스의 참조 횟수 : 2
+            yagom?.room = room // Room 인스턴스의 참조 횟수 : 2
+            
+            yagom = nil // Person 인스턴스의 참조 횟수 : 1
+            room = nil // Room 인스턴스의 참조 횟수 : 1
+            
+            // Person 인스턴스를 참조할 방법 상실 - 메모리에 잔존
+            // Room 인스턴스를 참조할 방법 상실 - 메모리에 잔존
+            ```
+            
+- 약한 참조
+    - 자신이 참조하는 인스턴스의 참조 횟수를 증가시키지 않는다.
+    - `weak`
+    
+    <aside>
+    💡
+    
+    약한참조와 상수, 옵셔널
+    
+    약한참조는 상수에 쓰일 수 없다. 자신이 참조하던 인스턴스가 메모리에서 해제된다면 `nil`이 할당될 수 있어야 하기 때문이다. 그래서 약한참조를 할 떄는 값을 변경할 수 있는 변수로 선언해야 한다. 더불어 `nil`이 할당될 수 있어야 하므로 약한참조는 항상 옵셔널이어야 한다.
+    
+    </aside>
+    
+- 미소유참조
+    - 약한참조와 다르게 자신이 참조하는 인스턴스가 항상 메모리에 존재할 것이라는 전제를 기반으로 동작한다.
+        - 참조하는 인스턴스가 메모리에서 해제되더라도 `nil`을 할당하지 않는다.
+        - 미소유참조를 하면서 메모리에서 해제된 인스턴스에 접근하려 한다면 런타임 오류가 발생한다.
+    - `unowned`
+- 미소유 옵셔널 참조
+    - 클래스를 참조하는 옵셔널을 `unowned`로 표시할 수 있다.
+        - 미소유 옵셔널 참조와 약한참조를 같은 상황에 사용할 수 있다.
+    - 미소유 옵셔널 참조는 `nil`이 될 수 있다.
+        - 하지만 약한참조처럼 자동으로 할당하지 않고, 개발자가 직접 할당해 주어야 한다.
+- 미소유참조와 암시적 추출 옵셔널 프로퍼티
+    - 암시적 추출 옵셔널 프로퍼티는 생성자의 2단계 초기화 조건을 충족시키기 위해 사용할 수 있다.
+    - 미소유참조 프로퍼티는 강한참조를 피하면서도 상수로 지정하기 위해 사용할 수 있다.
+        - 단, 참조 대상이 절대 `nil`이 되지 않는다고 보장되어야 한다.
+    - 코드 예시
+        
+        ```swift
+        import Foundation
+        
+        class Company {
+            let name: String
+            
+            var ceo: CEO!
+            
+            init(name: String, ceoName: String) {
+                self.name = name
+                self.ceo = CEO(name: ceoName, company: self)
+            }
+            
+            func introduce() {
+                print("\(name)의 CEO는 \(ceo.name)입니다.")
+            }
+        }
+        class CEO {
+            let name: String
+            
+            unowned let company: Company
+            
+            init(name: String, company: Company) {
+                self.name = name
+                self.company = company
+            }
+            
+            func introduce() {
+                print("\(name)는 \(company.name)의 CEO입니다.")
+            }
+        }
+        
+        let company: Company = Company(name: "무한상사", ceoName: "김태호")
+        company.introduce()
+        company.ceo.introduce()
+        ```
+        
+- 클로저의 강한참조 순환
+    - 클로저의 강한참조 순환 문제
+        - 클로저 내부에서 `self`를 접근할 때 클로저의 값 획득 특성으로 인해 강한참조 순환이 발생한다.
+    - 캡처리스트
+        - `[]`, `in`
+        - 캡처리스트에 명시된 요소가 참조 타입이 아니라면, 해당 요소들은 클로저가 생성될 때 초기화된다.
+            - 값 타입과 캡처리스트 코드 예시
+                
+                ```swift
+                import Foundation
+                
+                var a = 0, b = 0
+                let closure = { [a] in // a라는 값을 강한캡처, 변수 a와 별개
+                    print(a, b)
+                    b = 20 // b를 강한참조
+                }
+                
+                a = 10
+                b = 10
+                closure() // 0 10
+                print(b) // 20
+                ```
+                
+            - 참조 타입과 캡처리스트 코드 예시
+                
+                ```swift
+                import Foundation
+                
+                class SimpleClass {
+                    var value: Int = 0
+                }
+                
+                var x = SimpleClass(), y = SimpleClass()
+                
+                let closure = { [x] in // 클래스 x를 강한캡처
+                    print(x.value, y.value)
+                }
+                
+                x.value = 10
+                y.value = 10
+                
+                closure() // 10 10
+                ```
+                
+        - `weak`, `unowned`
