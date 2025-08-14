@@ -285,3 +285,58 @@
                 ```
                 
         - `weak`, `unowned`
+
+### Chapter 28. 오류처리
+
+- 오류처리
+    - 프로그램이 오류를 일으켰을 때 이것을 감지하고 회복시키는 과정
+- `Error`
+    - 사실상 요구사항이 없는 빈 프로토콜
+- `throw`
+- 스위프트에서 오류를 처리하기 위한 방법
+    - 함수에서 발생한 오류를 해당 함수를 호출한 코드에 알리는 방법
+        - `try`, `try?`, `try!`로 던져진 오류를 받을 수 있다.
+        - 함수, 메서드, 생성자 뒤에 `throws`를 사용하여 오류를 던질 수 있다.
+    - `do-catch` 구문을 이용하여 오류를 처리하는 방법
+    - 옵셔널 값으로 오류를 처리하는 방법
+        - `try?`를 사용하여 에러 발생 시, `nil`로 대체할 수 있다.
+    - 오류가 발생하지 않을 것이라고 확신하는 방법
+        - 오류가 발생하지 않을 거라고 확신하는 상황이라면, `try!`를 사용할 수 있다.
+        - 오류가 발생하면 런타임 오류가 발생한다.
+    - `rethrows`
+        - 함수나 메서드는 자신의 매개변수로 전달받은 함수가 오류를 던진다는 것을 `rethrows`를 통해 나타낼 수 있다.
+    - `defer`
+        - 현재 코드 범위를 벗어나기 전까지 실행을 미루고 있다가 프로그램 실행 흐름이 코드 범위를 벗어나기 직전 실행된다.
+- 오류 타입 지정
+    - 어떤 타입의 오류를 던지고 받을지 명확히 명시하고 싶을 때
+    - 코드 예시
+        
+        ```swift
+        import Foundation
+        
+        enum PhoneCallError: Error {
+            case noSignal
+            case outOfBattery
+            case airplaneMode
+        }
+        
+        enum TextMessageError: Error {
+            case wrongNumber
+            case blocked
+        }
+        
+        func makePhoneCall() throws(PhoneCallError) { // throw TextMessageError.wrongNumber
+            // 오류 발생!!
+            throw PhoneCallError.noSignal
+        }
+        
+        do {
+            try makePhoneCall()
+        } catch .noSignal {
+            print("통신 연결 상태가 좋지 않습니다")
+        } catch .outOfBattery {
+            print("배터리가 부족합니다")
+        } catch .airplaneMode {
+            print("비행기 모드 상태입니다")
+        }
+        ```
