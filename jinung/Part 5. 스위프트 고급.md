@@ -357,3 +357,60 @@
     - 전역변수가 아닌 지역변수일 때
     - 클로저에 의해 캡처되지 않았거나 비탈출 클로저에 의해서만 캡처되었을 때
 
+### Chapter 30. 불명확 타입과 상자형 프로토콜 타입
+
+- 불명확 타입
+    - 함수나 프로퍼티에서 반환하는 값의 구체적인 타입을 숨기는 기능
+    - 프로토콜을 따르는 어떤 타입을 반환할 것이지만, 정확히 무슨 타입인지는 알려주지 않은 채로 반환하겠다.
+    - `some`
+    - 제네릭과의 차이
+        - 제네릭
+            - 사용하는 쪽에서 타입을 명시
+        - 불명확 타입
+            - 구현하는 쪽에서 타입을 결정, 외부에서는 프로토콜을 따른다는 것만 안다.
+            - 역제네릭 타입으로도 표현
+    - `associatedType`이나 `Self`를 사용하는 프로토콜은 타입 자체가 제네릭하게 되어 반환 타입으로 사용할 수 없다.
+- 상자형 프로토콜 타입
+    - 실존 타입으로도 표현
+    - 타입 위치에 프로토콜이 위치하면, 실존 타입이자 상자형 프로토콜 타입
+    - `any`
+    - 코드 예시
+        
+        ```swift
+        import Foundation
+        
+        protocol Animal {
+            func makeSound() -> String
+        }
+        
+        struct Dog: Animal {
+            func makeSound() -> String {
+                return "Woof!"
+            }
+        }
+        
+        struct Cat: Animal {
+            func makeSound() -> String {
+                return "Meow!"
+            }
+        }
+        
+        struct Person {
+            var pets: [any Animal]
+        }
+        
+        let dog: Animal = Dog()
+        let cat: Animal = Cat()
+        let bello: Person = .init(pets: [dog, cat])
+        ```
+        
+        - 박스형 프로토콜 타입 활용: `var pets: [any animal]`
+            - 배열에 Animal을 준수하는 어떤 타입이든 들어갈 수 있기 때문에, 여러 타입이 섞일 수 있다.
+            - 프로퍼티를 호출하는 쪽에서 그 타입들이 무엇인지 알 수 없다.
+        - 불투명 타입 활용: `var pets: [some Animal]`
+            - Animal을 준수하는 단 하나의 타입만 들어갈 수 있어, 타입이 섞이지 않는다.
+            - 프로퍼티를 호출하는 쪽에서 그 타입이 무엇인지 알 수 없다.
+        - 제네릭 활용: `struct Person<T: Animal>`, `var pets: [T]`
+            - 배열에 Animal을 준수하는 단 하나의 타입만이 들어갈 수 있다.
+            - 프로퍼티를 호출하는 쪽에서도 해당 타입이 무엇인지 명확하게 알 수 있다.
+
